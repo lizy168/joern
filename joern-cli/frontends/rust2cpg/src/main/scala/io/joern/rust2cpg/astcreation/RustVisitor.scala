@@ -355,9 +355,11 @@ trait RustVisitor(implicit withSchemaValidation: ValidationMode) { this: AstCrea
     impl.typ match {
       case implTrait :: implType :: Nil =>
         val typeDecl = typeDeclForTraitImpl(impl, implTrait, implType)
+        accumulator.registerTraitImpl(typeFullNameForType(implType), typeDecl.fullName)
         methodAstParentStack.push(typeDecl)
         val methodAsts = impl.assocItemList.assocItem.collect { case fn: Fn => visitFn(fn) }
         methodAstParentStack.pop()
+        addDetachedBindingAsts(typeDecl, methodAsts)
         Ast(typeDecl).withChildren(methodAsts)
       case _ => notHandledYet(impl)
     }
@@ -391,6 +393,7 @@ trait RustVisitor(implicit withSchemaValidation: ValidationMode) { this: AstCrea
     methodAstParentStack.push(typeDecl)
     val methodAsts = trait_.assocItemList.toSeq.flatMap(_.assocItem).collect { case fn: Fn => visitFn(fn) }
     methodAstParentStack.pop()
+    addDetachedBindingAsts(typeDecl, methodAsts)
     Ast(typeDecl).withChildren(methodAsts)
   }
 
